@@ -1,10 +1,11 @@
 /*!
- * sly 1.6.0 - 21st Aug 2015
+ * sly 1.6.1 - 8th Aug 2015
  * https://github.com/darsain/sly
  *
  * Licensed under the MIT license.
  * http://opensource.org/licenses/MIT
  */
+
 ;(function ($, w, undefined) {
 	'use strict';
 
@@ -59,6 +60,8 @@
 	 * @param {Object}  callbackMap Callbacks map.
 	 */
 	function Sly(frame, options, callbackMap) {
+		if (!(this instanceof Sly)) return new Sly(frame, options, callbackMap);
+
 		// Extend options
 		var o = $.extend({}, Sly.defaults, options);
 
@@ -205,9 +208,7 @@
 				var ignoredMargin = 0;
 				var lastItemIndex = $items.length - 1;
 				var lastItem;
-				var slideeSpan = $slidee[o.horizontal ? 'outerHeight' : 'outerWidth']();
-				var currentSpan = 0;
-				
+
 				// Reset slideeSize
 				slideeSize = 0;
 
@@ -217,13 +218,9 @@
 					var $item = $(element);
 					var rect = element.getBoundingClientRect();
 					var itemSize = round(o.horizontal ? rect.width || rect.right - rect.left : rect.height || rect.bottom - rect.top);
-					var spanSize = round(!o.horizontal ? rect.width || rect.right - rect.left : rect.height || rect.bottom - rect.top);
 					var itemMarginStart = getPx($item, o.horizontal ? 'marginLeft' : 'marginTop');
-					var spanMarginStart = getPx($item, !o.horizontal ? 'marginLeft' : 'marginTop');
 					var itemMarginEnd = getPx($item, o.horizontal ? 'marginRight' : 'marginBottom');
-					var spanMarginEnd = getPx($item, !o.horizontal ? 'marginRight' : 'marginBottom');
 					var itemSizeFull = itemSize + itemMarginStart + itemMarginEnd;
-					var spanSizeFull = spanSize + spanMarginStart + spanMarginEnd;
 					var singleSpaced = !itemMarginStart || !itemMarginEnd;
 					var item = {};
 					item.el = element;
@@ -239,17 +236,7 @@
 					}
 
 					// Increment slidee size for size of the active element
-					if (!i) {
-						slideeSize += itemSizeFull;
-						currentSpan += spanSizeFull;
-					}
-					else if (currentSpan + spanSizeFull > slideeSpan) {
-						slideeSize += itemSizeFull;
-						currentSpan = 0;
-					}
-					else {
-						currentSpan += spanSizeFull;
-					}
+					slideeSize += itemSizeFull;
 
 					// Try to account for vertical margin collapsing in vertical mode
 					// It's not bulletproof, but should work in 99% of cases
@@ -1758,6 +1745,9 @@
 		 * @return {Void}
 		 */
 		self.destroy = function () {
+			// Remove the reference to itself
+			Sly.removeInstance(frame);
+
 			// Unbind all events
 			$scrollSource
 				.add($handle)
@@ -1818,6 +1808,12 @@
 			if (self.initialized) {
 				return;
 			}
+
+			// Disallow multiple instances on the same element
+			if (Sly.getInstance(frame)) throw new Error('There is already a Sly instance on this element');
+
+			// Store the reference to itself
+			Sly.storeInstance(frame, self);
 
 			// Register callbacks map
 			self.on(callbackMap);
@@ -1921,6 +1917,18 @@
 			return self;
 		};
 	}
+
+	Sly.getInstance = function (element) {
+		return $.data(element, namespace);
+	};
+
+	Sly.storeInstance = function (element, sly) {
+		return $.data(element, namespace, sly);
+	};
+
+	Sly.removeInstance = function (element) {
+		return $.removeData(element, namespace);
+	};
 
 	/**
 	 * Return type of the value.
@@ -2115,11 +2123,11 @@
 		// Apply to all elements
 		return this.each(function (i, element) {
 			// Call with prevention against multiple instantiations
-			var plugin = $.data(element, namespace);
+			var plugin = Sly.getInstance(element);
 
 			if (!plugin && !method) {
 				// Create a new object if it doesn't exist yet
-				plugin = $.data(element, namespace, new Sly(element, options, callbackMap).init());
+				plugin = new Sly(element, options, callbackMap).init();
 			} else if (plugin && method) {
 				// Call method
 				if (plugin[method]) {
