@@ -1,5 +1,5 @@
 /*!
- * sly 1.6.0 - 17th Jul 2015
+ * sly 1.6.0 - 21st Aug 2015
  * https://github.com/darsain/sly
  *
  * Licensed under the MIT license.
@@ -205,7 +205,9 @@
 				var ignoredMargin = 0;
 				var lastItemIndex = $items.length - 1;
 				var lastItem;
-
+				var slideeSpan = $slidee[o.horizontal ? 'outerHeight' : 'outerWidth']();
+				var currentSpan = 0;
+				
 				// Reset slideeSize
 				slideeSize = 0;
 
@@ -215,9 +217,13 @@
 					var $item = $(element);
 					var rect = element.getBoundingClientRect();
 					var itemSize = round(o.horizontal ? rect.width || rect.right - rect.left : rect.height || rect.bottom - rect.top);
+					var spanSize = round(!o.horizontal ? rect.width || rect.right - rect.left : rect.height || rect.bottom - rect.top);
 					var itemMarginStart = getPx($item, o.horizontal ? 'marginLeft' : 'marginTop');
+					var spanMarginStart = getPx($item, !o.horizontal ? 'marginLeft' : 'marginTop');
 					var itemMarginEnd = getPx($item, o.horizontal ? 'marginRight' : 'marginBottom');
+					var spanMarginEnd = getPx($item, !o.horizontal ? 'marginRight' : 'marginBottom');
 					var itemSizeFull = itemSize + itemMarginStart + itemMarginEnd;
+					var spanSizeFull = spanSize + spanMarginStart + spanMarginEnd;
 					var singleSpaced = !itemMarginStart || !itemMarginEnd;
 					var item = {};
 					item.el = element;
@@ -233,7 +239,17 @@
 					}
 
 					// Increment slidee size for size of the active element
-					slideeSize += itemSizeFull;
+					if (!i) {
+						slideeSize += itemSizeFull;
+						currentSpan += spanSizeFull;
+					}
+					else if (currentSpan + spanSizeFull > slideeSpan) {
+						slideeSize += itemSizeFull;
+						currentSpan = 0;
+					}
+					else {
+						currentSpan += spanSizeFull;
+					}
 
 					// Try to account for vertical margin collapsing in vertical mode
 					// It's not bulletproof, but should work in 99% of cases
