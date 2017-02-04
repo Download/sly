@@ -1,5 +1,7 @@
 # [Sly](http://darsa.in/sly)
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/Download/sly.svg)](https://greenkeeper.io/)
+
 JavaScript library for one-directional scrolling with item based navigation support.
 
 Sly supports navigation with:
